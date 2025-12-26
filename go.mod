@@ -3,7 +3,6 @@ module github.com/yyhuni/xingfinger
 go 1.15
 
 require (
-	github.com/360EntSecGroup-Skylar/excelize v1.4.1
 	github.com/PuerkitoBio/goquery v1.7.1
 	github.com/gookit/color v1.4.2
 	github.com/spf13/cobra v1.2.1

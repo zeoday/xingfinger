@@ -47,7 +47,6 @@ xingfinger scan -u https://example.com
 
 ```bash
 xingfinger scan -f url.txt -o result.json   # 输出JSON
-xingfinger scan -f url.txt -o result.xlsx   # 输出Excel
 ```
 
 **4. 其他参数：**
