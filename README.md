@@ -31,29 +31,13 @@ go build -o xingfinger
 
 ### 使用
 
-**1. 批量识别：**
-
 ```bash
-xingfinger scan -f url.txt   # URL地址需带上协议，每行一个
-```
-
-**2. 单URL识别：**
-
-```bash
-xingfinger scan -u https://example.com
-```
-
-**3. 结果输出：**
-
-```bash
-xingfinger scan -f url.txt -o result.json   # 输出JSON
-```
-
-**4. 其他参数：**
-
-```bash
-xingfinger scan -f url.txt -t 50           # 设置线程数（默认100）
-xingfinger scan -f url.txt -p http://127.0.0.1:8080  # 设置代理
+xingfinger -l url.txt              # 批量扫描
+xingfinger -u https://example.com  # 单URL扫描
+xingfinger -l url.txt -o result.json  # 输出JSON
+xingfinger -l url.txt -t 50        # 设置线程数
+xingfinger -l url.txt -p http://127.0.0.1:8080  # 设置代理
+xingfinger -l url.txt --silent     # 安静模式，只输出命中结果
 ```
 
 ### 指纹编写

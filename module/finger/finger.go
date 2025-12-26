@@ -33,6 +33,7 @@ type Scanner struct {
 	thread       int           // 并发线程数
 	output       string        // 输出文件路径
 	proxy        string        // 代理服务器地址
+	silent       bool          // 安静模式
 	allResults   []Result      // 所有扫描结果
 	hitResults   []Result      // 命中指纹的结果
 	fingerprints *Packjson     // 指纹规则库
@@ -45,15 +46,17 @@ type Scanner struct {
 //   - thread: 并发线程数
 //   - output: 输出文件路径（可为空）
 //   - proxy: 代理服务器地址（可为空）
+//   - silent: 安静模式
 //
 // 返回：
 //   - 初始化完成的扫描器实例
-func NewScanner(urls []string, thread int, output, proxy string) *Scanner {
+func NewScanner(urls []string, thread int, output, proxy string, silent bool) *Scanner {
 	s := &Scanner{
 		queue:      queue.NewQueue(),
 		thread:     thread,
 		output:     output,
 		proxy:      proxy,
+		silent:     silent,
 		allResults: []Result{},
 		hitResults: []Result{},
 	}
@@ -89,12 +92,9 @@ func (s *Scanner) Run() {
 	// 等待所有线程完成
 	s.wg.Wait()
 
-	// 输出命中指纹的结果汇总
-	color.RGBStyleFromString("244,211,49").Println("\n[+] Matched:")
-	for _, r := range s.hitResults {
-		fmt.Printf("[ %s | ", r.URL)
-		color.RGBStyleFromString("237,64,35").Printf("%s", r.CMS)
-		fmt.Printf(" | %s | %d | %d | %s ]\n", r.Server, r.StatusCode, r.Length, r.Title)
+	// 非安静模式下输出统计信息
+	if !s.silent {
+		color.RGBStyleFromString("244,211,49").Printf("\n[+] Scanned: %d, Matched: %d\n", len(s.allResults), len(s.hitResults))
 	}
 
 	// 如果指定了输出文件，保存结果
@@ -184,16 +184,24 @@ func (s *Scanner) scan() {
 
 		s.allResults = append(s.allResults, result)
 
-		// 格式化输出
-		line := fmt.Sprintf("[ %s | %s | %s | %d | %d | %s ]",
-			result.URL, result.CMS, result.Server, result.StatusCode, result.Length, result.Title)
-
-		// 命中指纹的结果用红色高亮显示
-		if result.CMS != "" {
-			color.RGBStyleFromString("237,64,35").Println(line)
-			s.hitResults = append(s.hitResults, result)
+		// 安静模式只输出命中的结果
+		if s.silent {
+			if result.CMS != "" {
+				fmt.Printf("%s [%s]\n", result.URL, result.CMS)
+				s.hitResults = append(s.hitResults, result)
+			}
 		} else {
-			fmt.Println(line)
+			// 格式化输出
+			line := fmt.Sprintf("[ %s | %s | %s | %d | %d | %s ]",
+				result.URL, result.CMS, result.Server, result.StatusCode, result.Length, result.Title)
+
+			// 命中指纹的结果用红色高亮显示
+			if result.CMS != "" {
+				color.RGBStyleFromString("237,64,35").Println(line)
+				s.hitResults = append(s.hitResults, result)
+			} else {
+				fmt.Println(line)
+			}
 		}
 	}
 }
