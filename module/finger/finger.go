@@ -1,5 +1,4 @@
 // Package finger 提供 Web 指纹识别核心功能
-// 包含扫描器、指纹匹配、结果处理等核心逻辑
 package finger
 
 import (
@@ -15,28 +14,27 @@ import (
 )
 
 // Result 扫描结果结构体
-// 存储单个 URL 的指纹识别结果
 type Result struct {
-	URL        string `json:"url"`         // 目标 URL
-	CMS        string `json:"cms"`         // 识别到的 CMS/框架名称，多个用逗号分隔
-	Server     string `json:"server"`      // 服务器类型（来自 Server 或 X-Powered-By 头）
-	StatusCode int    `json:"status_code"` // HTTP 响应状态码
-	Length     int    `json:"length"`      // 响应内容长度
-	Title      string `json:"title"`       // 页面标题
+	URL        string `json:"url"`
+	CMS        string `json:"cms"`
+	Server     string `json:"server"`
+	StatusCode int    `json:"status_code"`
+	Length     int    `json:"length"`
+	Title      string `json:"title"`
 }
 
 // Scanner 指纹扫描器
-// 管理扫描任务的执行，包括并发控制、结果收集等
 type Scanner struct {
-	queue        *queue.Queue // 任务队列，存储待扫描的 URL
+	queue        *queue.Queue
 	wg           sync.WaitGroup
-	thread       int           // 并发线程数
-	output       string        // 输出文件路径
-	proxy        string        // 代理服务器地址
-	silent       bool          // 安静模式
-	allResults   []Result      // 所有扫描结果
-	hitResults   []Result      // 命中指纹的结果
-	fingerprints *Packjson     // 指纹规则库
+	mu           sync.Mutex // 保护结果切片的并发写入
+	thread       int
+	output       string
+	proxy        string
+	silent       bool
+	allResults   []Result
+	hitResults   []Result
+	fingerprints *Packjson
 }
 
 // NewScanner 创建新的扫描器实例
@@ -51,10 +49,8 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 		hitResults: []Result{},
 	}
 
-	// 设置超时时间
 	Timeout = timeout
 
-	// 加载指纹规则库
 	err := LoadWebfingerprint(source.GetExePath() + "/finger.json")
 	if err != nil {
 		fmt.Println("[!] Fingerprint file error")
@@ -62,8 +58,6 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 	}
 	s.fingerprints = GetWebfingerprint()
 
-	// 将所有 URL 加入任务队列
-	// 队列元素格式：[url, flag]，flag=0 表示初始 URL，flag=1 表示 JS 跳转发现的 URL
 	for _, url := range urls {
 		s.queue.Push([]string{url, "0"})
 	}
@@ -71,10 +65,8 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 }
 
 // Run 启动扫描任务
-// 创建多个 goroutine 并发执行扫描，等待所有任务完成后输出结果
 func (s *Scanner) Run() {
-	// 启动工作线程
-	for i := 0; i <= s.thread; i++ {
+	for i := 0; i < s.thread; i++ {
 		s.wg.Add(1)
 		go func() {
 			defer s.wg.Done()
@@ -82,35 +74,32 @@ func (s *Scanner) Run() {
 		}()
 	}
 
-	// 等待所有线程完成
 	s.wg.Wait()
 
-	// 非安静模式下输出统计信息
 	if !s.silent {
 		color.RGBStyleFromString("244,211,49").Printf("\n[+] Scanned: %d, Matched: %d\n", len(s.allResults), len(s.hitResults))
 	}
 
-	// 如果指定了输出文件，保存结果
 	if s.output != "" {
 		saveResults(s.output, s.allResults)
 	}
 }
 
-// scan 执行单个工作线程的扫描逻辑
-// 从队列中获取 URL，发送 HTTP 请求，进行指纹匹配
+// scan 执行扫描逻辑
 func (s *Scanner) scan() {
-	for s.queue.Len() != 0 {
-		// 从队列获取任务
+	for {
 		item := s.queue.Pop()
+		if item == nil {
+			return
+		}
+
 		urlData, ok := item.([]string)
 		if !ok {
 			continue
 		}
 
-		// 发送 HTTP 请求获取响应
 		resp, err := doHTTPRequest(urlData, s.proxy)
 		if err != nil {
-			// HTTPS 失败时尝试 HTTP
 			urlData[0] = strings.ReplaceAll(urlData[0], "https://", "http://")
 			resp, err = doHTTPRequest(urlData, s.proxy)
 			if err != nil {
@@ -118,20 +107,16 @@ func (s *Scanner) scan() {
 			}
 		}
 
-		// 将 JS 跳转发现的 URL 加入队列
 		for _, jurl := range resp.jsurl {
 			if jurl != "" {
 				s.queue.Push([]string{jurl, "1"})
 			}
 		}
 
-		// 将响应头转为 JSON 字符串，便于指纹匹配
 		headers := toJSON(resp.header)
 		var matched []string
 
-		// 遍历指纹规则进行匹配
 		for _, fp := range s.fingerprints.Fingerprint {
-			// 根据指纹位置选择匹配目标
 			var target string
 			switch fp.Location {
 			case "body":
@@ -144,27 +129,22 @@ func (s *Scanner) scan() {
 				continue
 			}
 
-			// 根据匹配方法执行匹配
 			switch fp.Method {
 			case "keyword":
-				// 关键字匹配：所有关键字都必须存在
 				if matchKeyword(target, fp.Keyword) {
 					matched = append(matched, fp.Cms)
 				}
 			case "faviconhash":
-				// Favicon hash 匹配
 				if resp.favhash == fp.Keyword[0] {
 					matched = append(matched, fp.Cms)
 				}
 			case "regular":
-				// 正则表达式匹配
 				if matchRegex(target, fp.Keyword) {
 					matched = append(matched, fp.Cms)
 				}
 			}
 		}
 
-		// 去重并构建结果
 		matched = unique(matched)
 		result := Result{
 			URL:        resp.url,
@@ -175,23 +155,38 @@ func (s *Scanner) scan() {
 			Title:      resp.title,
 		}
 
+		// 加锁保护并发写入
+		s.mu.Lock()
 		s.allResults = append(s.allResults, result)
+		if result.CMS != "" {
+			s.hitResults = append(s.hitResults, result)
+		}
+		s.mu.Unlock()
 
-		// 安静模式只输出命中的结果
+		// httpx 风格输出
 		if s.silent {
 			if result.CMS != "" {
 				fmt.Printf("%s [%s]\n", result.URL, result.CMS)
-				s.hitResults = append(s.hitResults, result)
 			}
 		} else {
-			// 格式化输出
-			line := fmt.Sprintf("[ %s | %s | %s | %d | %d | %s ]",
-				result.URL, result.CMS, result.Server, result.StatusCode, result.Length, result.Title)
+			// 格式: url [status] [length] [server] [title] [cms]
+			var parts []string
+			parts = append(parts, result.URL)
+			parts = append(parts, fmt.Sprintf("[%d]", result.StatusCode))
+			parts = append(parts, fmt.Sprintf("[%d]", result.Length))
+			if result.Server != "None" && result.Server != "" {
+				parts = append(parts, fmt.Sprintf("[%s]", result.Server))
+			}
+			if result.Title != "" {
+				parts = append(parts, fmt.Sprintf("[%s]", result.Title))
+			}
+			if result.CMS != "" {
+				parts = append(parts, fmt.Sprintf("[%s]", result.CMS))
+			}
 
-			// 命中指纹的结果用红色高亮显示
+			line := strings.Join(parts, " ")
 			if result.CMS != "" {
 				color.RGBStyleFromString("237,64,35").Println(line)
-				s.hitResults = append(s.hitResults, result)
 			} else {
 				fmt.Println(line)
 			}
@@ -200,14 +195,12 @@ func (s *Scanner) scan() {
 }
 
 // toJSON 将 map 转换为 JSON 字符串
-// 用于将 HTTP 响应头转换为可搜索的字符串格式
 func toJSON(data map[string][]string) string {
 	b, _ := json.Marshal(data)
 	return string(b)
 }
 
-// unique 对字符串切片去重
-// 同时过滤空字符串
+// unique 去重
 func unique(arr []string) []string {
 	seen := make(map[string]bool)
 	var result []string
