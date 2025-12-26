@@ -13,7 +13,7 @@ import (
 	"github.com/yyhuni/xingfinger/module/queue"
 )
 
-// Result 扫描结果结构体
+// Result 扫描结果
 type Result struct {
 	URL        string `json:"url"`
 	CMS        string `json:"cms"`
@@ -27,17 +27,17 @@ type Result struct {
 type Scanner struct {
 	queue        *queue.Queue
 	wg           sync.WaitGroup
-	mu           sync.Mutex // 保护结果切片的并发写入
+	mu           sync.Mutex
 	thread       int
 	output       string
 	proxy        string
 	silent       bool
 	allResults   []Result
 	hitResults   []Result
-	fingerprints *Packjson
+	fingerprints *Fingerprints
 }
 
-// NewScanner 创建新的扫描器实例
+// NewScanner 创建扫描器
 func NewScanner(urls []string, thread int, output, proxy string, timeout int, silent bool) *Scanner {
 	s := &Scanner{
 		queue:      queue.NewQueue(),
@@ -51,12 +51,12 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 
 	Timeout = timeout
 
-	err := LoadWebfingerprint(source.GetExePath() + "/finger.json")
+	err := LoadFingerprints(source.GetExePath() + "/finger.json")
 	if err != nil {
 		fmt.Println("[!] Fingerprint file error")
 		os.Exit(1)
 	}
-	s.fingerprints = GetWebfingerprint()
+	s.fingerprints = GetFingerprints()
 
 	for _, url := range urls {
 		s.queue.Push([]string{url, "0"})
@@ -64,7 +64,7 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 	return s
 }
 
-// Run 启动扫描任务
+// Run 启动扫描
 func (s *Scanner) Run() {
 	for i := 0; i < s.thread; i++ {
 		s.wg.Add(1)
@@ -85,7 +85,7 @@ func (s *Scanner) Run() {
 	}
 }
 
-// scan 执行扫描逻辑
+// scan 执行扫描
 func (s *Scanner) scan() {
 	for {
 		item := s.queue.Pop()
@@ -93,69 +93,68 @@ func (s *Scanner) scan() {
 			return
 		}
 
-		urlData, ok := item.([]string)
+		task, ok := item.([]string)
 		if !ok {
 			continue
 		}
 
-		resp, err := doHTTPRequest(urlData, s.proxy)
+		resp, err := fetch(task, s.proxy)
 		if err != nil {
-			urlData[0] = strings.ReplaceAll(urlData[0], "https://", "http://")
-			resp, err = doHTTPRequest(urlData, s.proxy)
+			task[0] = strings.ReplaceAll(task[0], "https://", "http://")
+			resp, err = fetch(task, s.proxy)
 			if err != nil {
 				continue
 			}
 		}
 
-		for _, jurl := range resp.jsurl {
-			if jurl != "" {
-				s.queue.Push([]string{jurl, "1"})
+		for _, jsURL := range resp.JsURLs {
+			if jsURL != "" {
+				s.queue.Push([]string{jsURL, "1"})
 			}
 		}
 
-		headers := toJSON(resp.header)
+		headers := toJSON(resp.Header)
 		var matched []string
 
-		for _, fp := range s.fingerprints.Fingerprint {
+		for _, rule := range s.fingerprints.Fingerprint {
 			var target string
-			switch fp.Location {
+			switch rule.Location {
 			case "body":
-				target = resp.body
+				target = resp.Body
 			case "header":
 				target = headers
 			case "title":
-				target = resp.title
+				target = resp.Title
 			default:
 				continue
 			}
 
-			switch fp.Method {
+			switch rule.Method {
 			case "keyword":
-				if matchKeyword(target, fp.Keyword) {
-					matched = append(matched, fp.Cms)
+				if matchKeyword(target, rule.Keyword) {
+					matched = append(matched, rule.Cms)
 				}
 			case "faviconhash":
-				if resp.favhash == fp.Keyword[0] {
-					matched = append(matched, fp.Cms)
+				if len(rule.Keyword) > 0 && resp.FavHash == rule.Keyword[0] {
+					matched = append(matched, rule.Cms)
 				}
 			case "regular":
-				if matchRegex(target, fp.Keyword) {
-					matched = append(matched, fp.Cms)
+				if matchRegex(target, rule.Keyword) {
+					matched = append(matched, rule.Cms)
 				}
 			}
 		}
 
 		matched = unique(matched)
 		result := Result{
-			URL:        resp.url,
+			URL:        resp.URL,
 			CMS:        strings.Join(matched, ","),
-			Server:     resp.server,
-			StatusCode: resp.statuscode,
-			Length:     resp.length,
-			Title:      resp.title,
+			Server:     resp.Server,
+			StatusCode: resp.StatusCode,
+			Length:     resp.Length,
+			Title:      resp.Title,
 		}
 
-		// 加锁保护并发写入
 		s.mu.Lock()
 		s.allResults = append(s.allResults, result)
 		if result.CMS != "" {
@@ -169,12 +168,11 @@ func (s *Scanner) scan() {
 				fmt.Printf("%s [%s]\n", result.URL, result.CMS)
 			}
 		} else {
-			// 格式: url [status] [length] [server] [title] [cms]
 			var parts []string
 			parts = append(parts, result.URL)
 			parts = append(parts, fmt.Sprintf("[%d]", result.StatusCode))
 			parts = append(parts, fmt.Sprintf("[%d]", result.Length))
-			if result.Server != "None" && result.Server != "" {
+			if result.Server != "" {
 				parts = append(parts, fmt.Sprintf("[%s]", result.Server))
 			}
 			if result.Title != "" {

@@ -10,25 +10,26 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 // Timeout 请求超时时间（秒）
 var Timeout = 10
 
-// resps HTTP 响应结构体
-// 存储解析后的 HTTP 响应信息，用于后续指纹匹配
-type resps struct {
-	url        string              // 请求的 URL
-	body       string              // 响应体内容（已转换为 UTF-8）
-	header     map[string][]string // 响应头
-	server     string              // 服务器类型
-	statuscode int                 // HTTP 状态码
-	length     int                 // 响应体长度
-	title      string              // 页面标题
-	jsurl      []string            // JS 跳转发现的 URL 列表
-	favhash    string              // Favicon 的 Murmur3 hash 值
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+// Response HTTP 响应结构体
+type Response struct {
+	URL        string
+	Body       string
+	Header     map[string][]string
+	Server     string
+	StatusCode int
+	Length     int
+	Title      string
+	JsURLs     []string
+	FavHash    string
 }
 
 // userAgents 常用浏览器 User-Agent 列表
@@ -44,9 +45,8 @@ func randomUA() string {
 	return userAgents[rand.Intn(len(userAgents))]
 }
 
-// extractTitle 从 HTML 内容中提取页面标题
+// extractTitle 从 HTML 提取页面标题
 func extractTitle(body string) string {
-	// 先尝试用正则提取，更可靠
 	re := regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
 	match := re.FindStringSubmatch(body)
 	if len(match) > 1 {
@@ -56,18 +56,10 @@ func extractTitle(body string) string {
 		title = strings.ReplaceAll(title, "\t", "")
 		return title
 	}
-
-	// 备用方案：使用 goquery
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
-	if err != nil {
-		return ""
-	}
-	title := doc.Find("title").Text()
-	title = strings.ReplaceAll(title, "\n", "")
-	return strings.TrimSpace(title)
+	return ""
 }
 
-// extractFavicon 提取并计算 Favicon 的 hash 值
+// extractFavicon 提取并计算 Favicon hash
 func extractFavicon(body, targetURL string) string {
 	paths := extractRegex(`href="(.*?favicon....)"`, body)
 	u, _ := url.Parse(targetURL)
@@ -89,8 +81,8 @@ func extractFavicon(body, targetURL string) string {
 	return calcFaviconHash(faviconURL)
 }
 
-// doHTTPRequest 发送 HTTP 请求并解析响应
-func doHTTPRequest(urlData []string, proxy string) (*resps, error) {
+// fetch 发送 HTTP 请求并解析响应
+func fetch(task []string, proxy string) (*Response, error) {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -105,7 +97,7 @@ func doHTTPRequest(urlData []string, proxy string) (*resps, error) {
 		Transport: transport,
 	}
 
-	req, err := http.NewRequest("GET", urlData[0], nil)
+	req, err := http.NewRequest("GET", task[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +113,12 @@ func doHTTPRequest(urlData []string, proxy string) (*resps, error) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	rawBody, _ := ioutil.ReadAll(resp.Body)
 
 	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
-	bodyStr := toUtf8(string(body), contentType)
+	body := decodeToUTF8(string(rawBody), contentType)
 
-	server := "None"
+	server := ""
 	if s := resp.Header.Get("Server"); s != "" {
 		server = s
 	} else if p := resp.Header.Get("X-Powered-By"); p != "" {
@@ -134,19 +126,19 @@ func doHTTPRequest(urlData []string, proxy string) (*resps, error) {
 	}
 
 	var jsURLs []string
-	if urlData[1] == "0" {
-		jsURLs = parseJSRedirect(bodyStr, urlData[0])
+	if task[1] == "0" {
+		jsURLs = parseJSRedirect(body, task[0])
 	}
 
-	return &resps{
-		url:        urlData[0],
-		body:       bodyStr,
-		header:     resp.Header,
-		server:     server,
-		statuscode: resp.StatusCode,
-		length:     len(bodyStr),
-		title:      extractTitle(bodyStr),
-		jsurl:      jsURLs,
-		favhash:    extractFavicon(bodyStr, urlData[0]),
+	return &Response{
+		URL:        task[0],
+		Body:       body,
+		Header:     resp.Header,
+		Server:     server,
+		StatusCode: resp.StatusCode,
+		Length:     len(body),
+		Title:      extractTitle(body),
+		JsURLs:     jsURLs,
+		FavHash:    extractFavicon(body, task[0]),
 	}, nil
 }

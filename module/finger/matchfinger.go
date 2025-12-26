@@ -18,8 +18,8 @@ import (
 //   - true: 所有关键字都存在
 //   - false: 有任意关键字不存在
 func matchKeyword(content string, keywords []string) bool {
-	for _, kw := range keywords {
-		if !strings.Contains(content, kw) {
+	for _, keyword := range keywords {
+		if !strings.Contains(content, keyword) {
 			return false
 		}
 	}
@@ -39,7 +39,10 @@ func matchKeyword(content string, keywords []string) bool {
 //   - false: 有任意正则不匹配
 func matchRegex(content string, patterns []string) bool {
 	for _, p := range patterns {
-		re := regexp.MustCompile(p)
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return false
+		}
 		if !re.MatchString(content) {
 			return false
 		}
