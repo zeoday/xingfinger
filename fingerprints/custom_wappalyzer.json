@@ -1,18 +1,52 @@
 {
-  "apps": {
-    "Wappalyzer 测试系统": {
-      "cats": [1],
-      "headers": {
-        "X-Powered-By": "TestSystem"
-      },
-      "description": "Wappalyzer 测试系统",
-      "website": "https://example.com"
+  "WordPress": {
+    "cats": [1, 6],
+    "headers": {
+      "X-Powered-By": "WordPress"
     },
-    "Wappalyzer 指纹测试": {
-      "cats": [6],
-      "scriptSrc": ["example_app\\.js"],
-      "description": "Wappalyzer 指纹测试",
-      "website": "https://example.com"
-    }
+    "html": [
+      "<link[^>]+href=\"[^\"]*wp-content/",
+      "<script[^>]+src=\"[^\"]*wp-includes/"
+    ],
+    "scripts": [
+      "/wp-includes/js/",
+      "/wp-content/plugins/"
+    ],
+    "implies": "PHP",
+    "icon": "WordPress.svg",
+    "website": "https://wordpress.org"
+  },
+  "Joomla": {
+    "cats": [1, 6],
+    "headers": {
+      "X-Powered-By": "Joomla"
+    },
+    "html": [
+      "Joomla!",
+      "com_"
+    ],
+    "meta": {
+      "generator": "Joomla"
+    },
+    "implies": "PHP",
+    "icon": "Joomla.svg",
+    "website": "https://www.joomla.org"
+  },
+  "Drupal": {
+    "cats": [1, 6],
+    "headers": {
+      "X-Drupal-Cache": ""
+    },
+    "html": [
+      "Drupal",
+      "drupal"
+    ],
+    "scripts": [
+      "/sites/all/",
+      "/modules/"
+    ],
+    "implies": "PHP",
+    "icon": "Drupal.svg",
+    "website": "https://www.drupal.org"
   }
 }

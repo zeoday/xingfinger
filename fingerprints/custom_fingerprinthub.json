@@ -1,24 +1,24 @@
 [
   {
-    "id": "fingerprinthub_test_system",
+    "id": "wordpress-detect",
     "info": {
-      "name": "FingerPrintHub 测试系统",
+      "name": "WordPress",
       "author": "test",
-      "tags": "detect,tech,fingerprinthub",
+      "tags": "detect,tech,wordpress,cms",
       "severity": "info",
       "metadata": {
-        "product": "FingerPrintHub 测试系统",
-        "vendor": "test"
+        "product": "WordPress",
+        "vendor": "WordPress"
       }
     },
     "http": [
       {
         "method": "GET",
-        "path": ["{{BaseURL}}/fingerprinthub"],
+        "path": ["{{BaseURL}}/"],
         "matchers": [
           {
             "type": "word",
-            "words": ["FingerPrintHub Test Page"],
+            "words": ["wp-content", "wp-includes"],
             "case-insensitive": true
           }
         ]
@@ -26,25 +26,52 @@
     ]
   },
   {
-    "id": "fingerprinthub_test_app",
+    "id": "joomla-detect",
     "info": {
-      "name": "FingerPrintHub 指纹测试",
+      "name": "Joomla",
       "author": "test",
-      "tags": "detect,tech,fingerprinthub",
+      "tags": "detect,tech,joomla,cms",
       "severity": "info",
       "metadata": {
-        "product": "FingerPrintHub 指纹测试",
-        "vendor": "test"
+        "product": "Joomla",
+        "vendor": "Joomla"
       }
     },
     "http": [
       {
         "method": "GET",
-        "path": ["{{BaseURL}}/fingerprinthub"],
+        "path": ["{{BaseURL}}/"],
+        "matchers": [
+          {
+            "type": "regex",
+            "regex": ["Joomla!\\s+([\\d.]+)"],
+            "case-insensitive": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "drupal-detect",
+    "info": {
+      "name": "Drupal",
+      "author": "test",
+      "tags": "detect,tech,drupal,cms",
+      "severity": "info",
+      "metadata": {
+        "product": "Drupal",
+        "vendor": "Drupal"
+      }
+    },
+    "http": [
+      {
+        "method": "GET",
+        "path": ["{{BaseURL}}/"],
         "matchers": [
           {
             "type": "word",
-            "words": ["TestApp detected"],
+            "words": ["X-Drupal-Cache"],
+            "part": "header",
             "case-insensitive": true
           }
         ]

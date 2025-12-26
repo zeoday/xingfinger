@@ -1,16 +1,28 @@
 {
   "fingerprint": [
     {
-      "cms": "EHole 测试系统",
-      "method": "keyword",
-      "location": "title",
-      "keyword": ["EHole Test Page"]
-    },
-    {
-      "cms": "EHole 指纹测试",
+      "cms": "WordPress",
       "method": "keyword",
       "location": "body",
-      "keyword": ["EHole 指纹测试页面"]
+      "keyword": ["wp-content", "wp-includes"]
+    },
+    {
+      "cms": "Joomla",
+      "method": "regular",
+      "location": "body",
+      "keyword": ["Joomla!\\s+([\\d.]+)"]
+    },
+    {
+      "cms": "Drupal",
+      "method": "keyword",
+      "location": "header",
+      "keyword": ["X-Drupal-Cache"]
+    },
+    {
+      "cms": "Discuz",
+      "method": "keyword",
+      "location": "body",
+      "keyword": ["Powered by Discuz!"]
     }
   ]
 }
