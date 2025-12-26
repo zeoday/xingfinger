@@ -115,6 +115,43 @@ xingfinger -u https://example.com --ehole my_ehole.json
 | ehole | 棱洞指纹库 |
 | goby | Goby 指纹库 |
 
+## JSON 输出格式
+
+使用 `-o result.json` 输出时，格式如下：
+
+```json
+[
+  {
+    "url": "https://example.com",
+    "cms": "WordPress,PHP",
+    "server": "nginx/1.18.0",
+    "status_code": 200,
+    "length": 12345,
+    "title": "Example Site"
+  },
+  {
+    "url": "https://target.com",
+    "cms": "致远OA",
+    "server": "Apache",
+    "status_code": 200,
+    "length": 8765,
+    "title": "OA系统登录"
+  }
+]
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `url` | string | 目标 URL |
+| `cms` | string | 检测到的指纹，多个用逗号分隔 |
+| `server` | string | Server 响应头 |
+| `status_code` | int | HTTP 状态码 |
+| `length` | int | 响应体长度 |
+| `title` | string | 页面标题 |
+
+
+</details>
+
 ## 参考项目
 
 - [chainreactors/fingers](https://github.com/chainreactors/fingers) - 多指纹库聚合识别引擎
