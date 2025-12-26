@@ -1,6 +1,6 @@
-// Package finger 提供 Web 指纹识别核心功能
+// Package pkg 提供 xingfinger 的核心功能
 // 本文件负责 HTTP 请求发送和响应解析
-package finger
+package pkg
 
 import (
 	"bytes"
@@ -83,13 +83,13 @@ func buildRawResponse(resp *http.Response, body []byte) []byte {
 	var buf bytes.Buffer
 
 	// 写入状态行
-	buf.WriteString(fmt.Sprintf("HTTP/%d.%d %d %s\r\n",
-		resp.ProtoMajor, resp.ProtoMinor, resp.StatusCode, http.StatusText(resp.StatusCode)))
+	fmt.Fprintf(&buf, "HTTP/%d.%d %d %s\r\n",
+		resp.ProtoMajor, resp.ProtoMinor, resp.StatusCode, http.StatusText(resp.StatusCode))
 
 	// 写入响应头
 	for key, values := range resp.Header {
 		for _, value := range values {
-			buf.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
+			fmt.Fprintf(&buf, "%s: %s\r\n", key, value)
 		}
 	}
 

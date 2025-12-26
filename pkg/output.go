@@ -1,5 +1,6 @@
-// Package finger 提供 Web 指纹识别功能
-package finger
+// Package pkg 提供 xingfinger 的核心功能
+// 本文件负责扫描结果的输出和保存
+package pkg
 
 import (
 	"encoding/json"

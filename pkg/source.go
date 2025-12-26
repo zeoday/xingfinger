@@ -1,30 +1,13 @@
-// Package source 提供数据源功能
-// 支持从本地文件获取目标 URL
-package source
+// Package pkg 提供 xingfinger 的核心功能
+// 本文件负责从各种来源加载目标 URL
+package pkg
 
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 	"strings"
 )
-
-// GetExePath 获取可执行文件所在目录
-// 用于定位指纹文件
-//
-// 返回：
-//   - 可执行文件所在目录的绝对路径
-func GetExePath() string {
-	exePath, err := os.Executable()
-	if err != nil {
-		log.Fatal(err)
-	}
-	// 解析符号链接，获取真实路径
-	res, _ := filepath.EvalSymlinks(filepath.Dir(exePath))
-	return res
-}
 
 // LoadFromFile 从本地文件加载 URL 列表
 // 支持两种格式：

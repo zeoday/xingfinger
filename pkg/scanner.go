@@ -1,9 +1,9 @@
-// Package finger 提供 Web 指纹识别核心功能
+// Package pkg 提供 xingfinger 的核心功能
 // 本文件是指纹扫描器的核心实现，负责：
 // 1. 初始化 fingers 指纹识别引擎
 // 2. 并发扫描目标 URL
 // 3. 收集和输出扫描结果
-package finger
+package pkg
 
 import (
 	"fmt"
@@ -13,7 +13,6 @@ import (
 
 	"github.com/chainreactors/fingers"
 	"github.com/gookit/color"
-	"github.com/yyhuni/xingfinger/module/queue"
 )
 
 // Result 扫描结果结构体
@@ -30,7 +29,7 @@ type Result struct {
 // Scanner 指纹扫描器
 // 负责管理扫描任务队列、并发控制和结果收集
 type Scanner struct {
-	queue      *queue.Queue    // URL 任务队列
+	queue      *Queue          // URL 任务队列
 	wg         sync.WaitGroup  // 等待组，用于同步所有扫描 goroutine
 	mu         sync.Mutex      // 互斥锁，保护结果切片的并发写入
 	thread     int             // 并发线程数
@@ -77,7 +76,7 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 
 	// 创建扫描器实例
 	s := &Scanner{
-		queue:      queue.NewQueue(),
+		queue:      NewQueue(),
 		thread:     thread,
 		output:     output,
 		proxy:      proxy,
@@ -171,7 +170,7 @@ func (s *Scanner) detectFavicon(body, baseURL string) string {
 	// 使用 fingers 引擎的 favicon 检测
 	// MatchFavicon 会计算 MD5 和 MMH3 hash 并匹配指纹库
 	frameworks := s.engine.MatchFavicon(faviconContent)
-	if frameworks == nil || len(frameworks) == 0 {
+	if len(frameworks) == 0 {
 		return ""
 	}
 

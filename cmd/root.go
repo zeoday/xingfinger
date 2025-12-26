@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yyhuni/xingfinger/module/finger"
-	"github.com/yyhuni/xingfinger/module/finger/source"
+	"github.com/yyhuni/xingfinger/pkg"
 
 	"github.com/spf13/cobra"
 )
@@ -25,13 +24,14 @@ const Banner = `
 
 // 命令行参数变量
 var (
-	inputFile  string // 输入文件路径，包含待扫描的 URL 列表
-	targetURL  string // 单个目标 URL
-	threadNum  int    // 并发线程数，默认 100
-	outputFile string // 输出文件路径，支持 JSON 格式
-	proxyAddr  string // 代理服务器地址，格式如 http://127.0.0.1:8080
-	timeout    int    // HTTP 请求超时时间（秒），默认 10
-	silent     bool   // 静默模式，只输出命中指纹的结果
+	inputFile    string // 输入文件路径，包含待扫描的 URL 列表
+	targetURL    string // 单个目标 URL
+	threadNum    int    // 并发线程数，默认 100
+	outputFile   string // 输出文件路径，支持 JSON 格式
+	proxyAddr    string // 代理服务器地址，格式如 http://127.0.0.1:8080
+	timeout      int    // HTTP 请求超时时间（秒），默认 10
+	silent       bool   // 静默模式，只输出命中指纹的结果
+	updateFinger bool   // 更新指纹库
 )
 
 // rootCmd 根命令
@@ -51,7 +51,8 @@ var rootCmd = &cobra.Command{
 使用示例：
   xingfinger -u http://example.com
   xingfinger -l urls.txt -o result.json
-  xingfinger -u http://example.com --silent`,
+  xingfinger -u http://example.com --silent
+  xingfinger --update`,
 	Run: runScan,
 }
 
@@ -75,6 +76,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&proxyAddr, "proxy", "p", "", "代理地址（如 http://127.0.0.1:8080）")
 	rootCmd.Flags().IntVar(&timeout, "timeout", 10, "请求超时时间（秒）")
 	rootCmd.Flags().BoolVar(&silent, "silent", false, "静默模式，只输出命中指纹的结果")
+	rootCmd.Flags().BoolVar(&updateFinger, "update", false, "更新指纹库")
 }
 
 // runScan 执行扫描任务
@@ -89,13 +91,27 @@ func runScan(cmd *cobra.Command, args []string) {
 		fmt.Print(Banner)
 	}
 
+	// 处理指纹更新
+	if updateFinger {
+		if err := pkg.UpdateFingerprints(); err != nil {
+			fmt.Printf("[!] 更新指纹库失败: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	// 加载本地指纹文件（如果存在）
+	if err := pkg.LoadLocalFingerprints(); err != nil {
+		fmt.Printf("[!] 加载本地指纹失败: %v\n", err)
+	}
+
 	var urls []string
 
 	// 根据输入方式加载 URL
 	switch {
 	case inputFile != "":
 		// 从文件加载 URL 列表并去重
-		urls = deduplicate(source.LoadFromFile(inputFile))
+		urls = deduplicate(pkg.LoadFromFile(inputFile))
 	case targetURL != "":
 		// 使用单个目标 URL
 		urls = []string{targetURL}
@@ -106,7 +122,7 @@ func runScan(cmd *cobra.Command, args []string) {
 	}
 
 	// 创建扫描器并执行扫描
-	scanner := finger.NewScanner(urls, threadNum, outputFile, proxyAddr, timeout, silent)
+	scanner := pkg.NewScanner(urls, threadNum, outputFile, proxyAddr, timeout, silent)
 	scanner.Run()
 	os.Exit(0)
 }
