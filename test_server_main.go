@@ -1,5 +1,4 @@
 //go:build ignore
-// +build ignore
 
 package main
 
@@ -9,100 +8,139 @@ import (
 )
 
 func main() {
-	// EHole 指纹测试页面
-	http.HandleFunc("/ehole", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Server", "TestServer/1.0")
-		fmt.Fprint(w, `<!DOCTYPE html>
-<html>
-<head>
-    <title>EHole Test Page</title>
-</head>
-<body>
-    <h1>EHole 指纹测试页面</h1>
-    <p>这是用于测试 EHole 自定义指纹的页面</p>
-</body>
-</html>`)
-	})
-
-	// Goby 指纹测试页面
-	http.HandleFunc("/goby", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Server", "TestServer/1.0")
-		fmt.Fprint(w, `<!DOCTYPE html>
-<html>
-<head>
-    <title>Goby Test Page</title>
-</head>
-<body>
-    <h1>Goby 指纹测试页面</h1>
-    <p>这是用于测试 Goby 自定义指纹的页面</p>
-</body>
-</html>`)
-	})
-
-	// Wappalyzer 指纹测试页面
-	http.HandleFunc("/wappalyzer", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("X-Powered-By", "TestSystem")
-		fmt.Fprint(w, `<!DOCTYPE html>
-<html>
-<head>
-    <title>Wappalyzer Test Page</title>
-</head>
-<body>
-    <h1>Wappalyzer 指纹测试页面</h1>
-    <script src="example_app.js"></script>
-</body>
-</html>`)
-	})
-
-	// Fingers 指纹测试页面
-	http.HandleFunc("/fingers", func(w http.ResponseWriter, r *http.Request) {
+	// WordPress 测试页面 (EHole 指纹)
+	http.HandleFunc("/wordpress", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!DOCTYPE html>
 <html>
 <head>
-    <title>Fingers Test Page</title>
+    <title>WordPress Site</title>
+    <link rel="stylesheet" href="/wp-content/themes/default/style.css">
 </head>
 <body>
-    <h1>Fingers 指纹测试页面</h1>
-    <p>TestFramework detected</p>
+    <h1>WordPress Test</h1>
+    <script src="/wp-includes/js/jquery.js"></script>
 </body>
 </html>`)
 	})
 
-	// FingerPrintHub 指纹测试页面
-	http.HandleFunc("/fingerprinthub", func(w http.ResponseWriter, r *http.Request) {
+	// Shiro 测试页面 (EHole 指纹 - header)
+	http.HandleFunc("/shiro", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Set-Cookie", "rememberMe=deleteMe; Path=/")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head><title>Shiro App</title></head>
+<body><h1>Shiro Test</h1></body>
+</html>`)
+	})
+
+	// Spring Boot 测试页面 (EHole 指纹)
+	http.HandleFunc("/spring", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"servletContextInitParams":{},"profiles":["default"],"logback":"enabled"}`)
+	})
+
+	// Swagger UI 测试页面 (EHole 指纹)
+	http.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head><title>Swagger UI</title></head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="swagger-ui-bundle.js"></script>
+</body>
+</html>`)
+	})
+
+	// Nginx 测试页面 (Wappalyzer 指纹)
+	http.HandleFunc("/nginx", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Server", "nginx/1.18.0")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head><title>Welcome to nginx!</title></head>
+<body>
+<h1>Welcome to nginx!</h1>
+</body>
+</html>`)
+	})
+
+	// jQuery 测试页面 (Wappalyzer 指纹)
+	http.HandleFunc("/jquery", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!DOCTYPE html>
 <html>
 <head>
-    <title>FingerPrintHub Test Page</title>
+    <title>jQuery Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>FingerPrintHub 指纹测试页面</h1>
-    <p>TestApp detected</p>
+    <h1>jQuery Test Page</h1>
 </body>
 </html>`)
 	})
 
-	// Favicon 测试
-	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		// 返回一个简单的 ICO 文件内容（最小的有效 ICO 文件）
-		icoData := []byte{
-			0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x01,
-			0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x30, 0x00,
-			0x00, 0x00, 0x16, 0x00, 0x00, 0x00, 0x28, 0x00,
-			0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00,
-			0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF,
-			0xFF, 0x00,
-		}
-		w.Header().Set("Content-Type", "image/x-icon")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(icoData)))
-		w.Write(icoData)
+	// PHP 测试页面 (Wappalyzer 指纹)
+	http.HandleFunc("/php", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("X-Powered-By", "PHP/7.4.3")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head><title>PHP Test</title></head>
+<body><h1>PHP Test Page</h1></body>
+</html>`)
+	})
+
+	// Tomcat 测试页面 (多种指纹)
+	http.HandleFunc("/tomcat", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Server", "Apache-Coyote/1.1")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head><title>Apache Tomcat</title></head>
+<body>
+    <h1>Apache Tomcat</h1>
+    <p>If you're seeing this, you've successfully installed Tomcat.</p>
+    <a href="/manager/status">Server Status</a>
+    <a href="/manager/html">Manager App</a>
+</body>
+</html>`)
+	})
+
+	// Jenkins 测试页面 (多种指纹)
+	http.HandleFunc("/jenkins", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("X-Jenkins", "2.319.1")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard [Jenkins]</title>
+    <link rel="icon" href="/static/favicon.ico">
+</head>
+<body>
+    <div id="jenkins">
+        <h1>Jenkins Dashboard</h1>
+    </div>
+</body>
+</html>`)
+	})
+
+	// GitLab 测试页面 (多种指纹)
+	http.HandleFunc("/gitlab", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>GitLab</title>
+    <link rel="icon" href="/assets/gitlab_logo-icon.png">
+</head>
+<body>
+    <img src="/assets/gitlab_logo-7ae504fe4f68fdebb3c2034e36621930cd36ea87924c11ff65dbcb8ed50dca58.png" alt="GitLab">
+    <h1>GitLab</h1>
+</body>
+</html>`)
 	})
 
 	// 默认页面
@@ -112,17 +150,20 @@ func main() {
 <html>
 <head>
     <title>Test Server</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
     <h1>指纹测试服务器</h1>
     <ul>
-        <li><a href="/ehole">EHole 指纹测试</a></li>
-        <li><a href="/goby">Goby 指纹测试</a></li>
-        <li><a href="/wappalyzer">Wappalyzer 指纹测试</a></li>
-        <li><a href="/fingers">Fingers 指纹测试</a></li>
-        <li><a href="/fingerprinthub">FingerPrintHub 指纹测试</a></li>
-        <li><a href="/favicon.ico">Favicon 测试</a></li>
+        <li><a href="/wordpress">WordPress (EHole)</a></li>
+        <li><a href="/shiro">Shiro (EHole - Header)</a></li>
+        <li><a href="/spring">Spring Boot (EHole)</a></li>
+        <li><a href="/swagger">Swagger UI (EHole)</a></li>
+        <li><a href="/nginx">Nginx (Wappalyzer)</a></li>
+        <li><a href="/jquery">jQuery (Wappalyzer)</a></li>
+        <li><a href="/php">PHP (Wappalyzer)</a></li>
+        <li><a href="/tomcat">Tomcat (多种指纹)</a></li>
+        <li><a href="/jenkins">Jenkins (多种指纹)</a></li>
+        <li><a href="/gitlab">GitLab (多种指纹)</a></li>
     </ul>
 </body>
 </html>`)
