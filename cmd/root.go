@@ -55,7 +55,7 @@ func init() {
 
 	// 目标参数
 	rootCmd.Flags().StringVarP(&targetURL, "url", "u", "", "目标 URL")
-	rootCmd.Flags().StringVarP(&urlFile, "file", "f", "", "URL 列表文件")
+	rootCmd.Flags().StringVarP(&urlFile, "list", "l", "", "URL 列表文件")
 
 	// 扫描参数
 	rootCmd.Flags().IntVarP(&thread, "thread", "t", 50, "并发线程数")
@@ -93,7 +93,7 @@ func runScan(cmd *cobra.Command, args []string) {
 
 	// 检查是否有目标
 	if len(urls) == 0 {
-		fmt.Println("[!] 请指定目标 URL (-u) 或 URL 文件 (-f)")
+		fmt.Println("[!] 请指定目标 URL (-u) 或 URL 文件 (-l)")
 		cmd.Help()
 		os.Exit(1)
 	}
