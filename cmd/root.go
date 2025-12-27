@@ -63,7 +63,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&output, "output", "o", "", "输出文件路径（JSON 格式）")
 	rootCmd.Flags().StringVarP(&proxy, "proxy", "p", "", "代理地址")
 	rootCmd.Flags().BoolVarP(&silent, "silent", "s", false, "静默模式，只输出命中结果")
-	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "终端输出 JSON 格式")
+	rootCmd.Flags().BoolVarP(&jsonOutput, "json", "j", false, "终端输出 JSON 格式")
 
 	// 自定义指纹文件
 	rootCmd.Flags().StringVar(&eholeFile, "ehole", "", "自定义 EHole 指纹文件")

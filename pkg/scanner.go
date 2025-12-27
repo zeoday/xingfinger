@@ -89,10 +89,10 @@ func NewScanner(urls []string, thread int, output, proxy string, timeout int, si
 
 	// 初始化 fingers 指纹识别引擎
 	// fingers 引擎聚合了多个指纹库：fingers、wappalyzer、fingerprinthub、ehole、goby
-	// 静默模式下抑制库的加载信息输出
+	// 静默模式或 JSON 模式下抑制库的加载信息输出
 	var engine *fingers.Engine
 	var err error
-	if silent {
+	if silent || jsonOutput {
 		// 临时重定向标准输出以抑制库的打印信息
 		oldStdout := os.Stdout
 		os.Stdout, _ = os.Open(os.DevNull)

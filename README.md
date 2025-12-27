@@ -18,8 +18,8 @@ XingFinger 是一款高效的 Web 指纹识别工具，基于 [chainreactors/fin
 - 🔍 **多指纹库聚合** - 集成 fingers、wappalyzer、fingerprinthub、ehole、goby 等指纹库
 - 🚀 **高性能并发** - 支持自定义线程数，快速扫描大量目标
 - 🎯 **Favicon 识别** - 主动获取 favicon 进行 hash 匹配
-- 📝 **多种输出格式** - 支持 JSON 导出和静默模式
-- � **自定义指纹*** - 支持加载自定义指纹文件
+- 📝 **多种输出格式** - 支持终端 JSON 输出、文件导出和静默模式
+- 🔧 **自定义指纹** - 支持加载自定义指纹文件
 
 ## 安装
 
@@ -48,22 +48,28 @@ go build -o xingfinger .
 xingfinger -u https://example.com
 
 # 批量扫描
-xingfinger -f urls.txt
+xingfinger -l urls.txt
 
-# 输出到 JSON 文件
-xingfinger -f urls.txt -o result.json
+# 终端输出 JSON 格式（方便管道处理）
+xingfinger -l urls.txt -j
+
+# 保存结果到 JSON 文件
+xingfinger -l urls.txt -o result.json
 
 # 设置并发线程数
-xingfinger -f urls.txt -t 100
+xingfinger -l urls.txt -t 100
 
 # 使用代理
-xingfinger -f urls.txt -p http://127.0.0.1:8080
+xingfinger -l urls.txt -p http://127.0.0.1:8080
 
 # 静默模式（只输出命中结果）
-xingfinger -f urls.txt -s
+xingfinger -l urls.txt -s
 
 # 使用自定义指纹
 xingfinger -u https://example.com --ehole my_ehole.json
+
+# JSON 输出配合 jq 过滤
+xingfinger -l urls.txt -j | jq 'select(.cms | contains("shiro"))'
 ```
 
 ## 参数说明
@@ -71,12 +77,13 @@ xingfinger -u https://example.com --ehole my_ehole.json
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `-u, --url` | 目标 URL | - |
-| `-f, --file` | URL 列表文件 | - |
+| `-l, --list` | URL 列表文件 | - |
 | `-t, --thread` | 并发线程数 | 50 |
 | `--timeout` | 请求超时时间（秒） | 10 |
 | `-o, --output` | 输出文件路径（JSON 格式） | - |
 | `-p, --proxy` | 代理地址 | - |
 | `-s, --silent` | 静默模式，只输出命中结果 | false |
+| `-j, --json` | 终端输出 JSON 格式 | false |
 | `--ehole` | 自定义 EHole 指纹文件 | - |
 | `--goby` | 自定义 Goby 指纹文件 | - |
 | `--wappalyzer` | 自定义 Wappalyzer 指纹文件 | - |
@@ -115,9 +122,19 @@ xingfinger -u https://example.com --ehole my_ehole.json
 | ehole | 棱洞指纹库 |
 | goby | Goby 指纹库 |
 
-## JSON 输出格式
+## 输出格式
 
-使用 `-o result.json` 输出时，格式如下：
+### 终端 JSON 输出 (`-j`)
+
+每行一个 JSON 对象，方便管道处理：
+
+```json
+{"url":"https://example.com","cms":"nginx,php","server":"nginx/1.18.0","status_code":200,"length":12345,"title":"Example"}
+```
+
+### 文件输出 (`-o`)
+
+JSON 数组格式：
 
 ```json
 [
@@ -128,14 +145,6 @@ xingfinger -u https://example.com --ehole my_ehole.json
     "status_code": 200,
     "length": 12345,
     "title": "Example Site"
-  },
-  {
-    "url": "https://target.com",
-    "cms": "致远OA",
-    "server": "Apache",
-    "status_code": 200,
-    "length": 8765,
-    "title": "OA系统登录"
   }
 ]
 ```
@@ -148,9 +157,6 @@ xingfinger -u https://example.com --ehole my_ehole.json
 | `status_code` | int | HTTP 状态码 |
 | `length` | int | 响应体长度 |
 | `title` | string | 页面标题 |
-
-
-</details>
 
 ## 参考项目
 
