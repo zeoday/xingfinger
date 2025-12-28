@@ -179,7 +179,7 @@ class TestHandler(BaseHTTPRequestHandler):
         self.send_html('<h1>404 Not Found</h1>', status=404)
 
 if __name__ == '__main__':
-    port = 8888
+    port = 9999
     server = HTTPServer(('0.0.0.0', port), TestHandler)
     print(f'测试服务器启动在 http://localhost:{port}')
     server.serve_forever()

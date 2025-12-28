@@ -19,7 +19,8 @@ XingFinger 是一款高效的 Web 指纹识别工具，基于 [chainreactors/fin
 - 🚀 **高性能并发** - 支持自定义线程数，快速扫描大量目标
 - 🎯 **Favicon 识别** - 主动获取 favicon 进行 hash 匹配
 - 📝 **多种输出格式** - 支持终端 JSON 输出、文件导出和静默模式
-- 🔧 **自定义指纹** - 支持加载自定义指纹文件
+- 🔧 **自定义指纹** - 支持加载自定义指纹文件，默认与内置指纹叠加使用
+- 🌐 **ARL 指纹支持** - 支持灯塔 ARL YAML 格式指纹（9000+ 条规则）
 
 ## 安装
 
@@ -65,8 +66,14 @@ xingfinger -l urls.txt -p http://127.0.0.1:8080
 # 静默模式（只输出命中结果）
 xingfinger -l urls.txt -s
 
-# 使用自定义指纹
+# 使用自定义指纹（与默认指纹叠加）
 xingfinger -u https://example.com --ehole my_ehole.json
+
+# 使用 ARL 指纹（与默认指纹叠加）
+xingfinger -u https://example.com --arl fingerprints/ARL.yaml
+
+# 禁用默认指纹，仅使用自定义指纹
+xingfinger -u https://example.com --no-default --arl fingerprints/ARL.yaml
 
 # JSON 输出配合 jq 过滤
 xingfinger -l urls.txt -j | jq 'select(.cms | contains("shiro"))'
@@ -84,15 +91,19 @@ xingfinger -l urls.txt -j | jq 'select(.cms | contains("shiro"))'
 | `-p, --proxy` | 代理地址 | - |
 | `-s, --silent` | 静默模式，只输出命中结果 | false |
 | `-j, --json` | 终端输出 JSON 格式 | false |
+| `--no-default` | 禁用默认指纹，仅使用自定义指纹 | false |
 | `--ehole` | 自定义 EHole 指纹文件 | - |
 | `--goby` | 自定义 Goby 指纹文件 | - |
 | `--wappalyzer` | 自定义 Wappalyzer 指纹文件 | - |
 | `--fingers` | 自定义 Fingers 指纹文件 | - |
 | `--fingerprint` | 自定义 FingerPrintHub 指纹文件 | - |
+| `--arl` | 自定义 ARL YAML 指纹文件 | - |
 
 ## 自定义指纹
 
-支持加载自定义指纹文件，格式与对应的指纹库一致。指纹文件示例见 `fingerprints/` 目录。
+支持加载自定义指纹文件，格式与对应的指纹库一致。自定义指纹默认与内置指纹**叠加使用**，如需禁用内置指纹，请使用 `--no-default` 参数。
+
+指纹文件示例见 `fingerprints/` 目录。
 
 **EHole 格式示例**：
 ```json
@@ -112,15 +123,35 @@ xingfinger -l urls.txt -j | jq 'select(.cms | contains("shiro"))'
 - location: `body`、`header`、`title`
 - keyword 数组中多个关键词为 AND 关系
 
+**ARL YAML 格式示例**：
+```yaml
+- name: nginx
+  rule: header="nginx"
+
+- name: apache
+  rule: header="Apache" && body="Apache Server"
+
+- name: wordpress
+  rule: body="wp-content" && body="wp-includes"
+
+- name: favicon_example
+  rule: icon_hash="116323821"
+```
+
+- 支持的条件类型：`body`、`header`、`title`、`icon_hash`
+- 多个条件使用 `&&` 连接，表示 AND 关系
+- 大小写不敏感匹配
+
 ## 指纹库说明
 
-| 指纹库 | 说明 |
-|--------|------|
-| fingers | chainreactors 原生指纹库 |
-| wappalyzer | Web 技术栈检测 |
-| fingerprinthub | 指纹中心 |
-| ehole | 棱洞指纹库 |
-| goby | Goby 指纹库 |
+| 指纹库 | 说明 | 规则数量 |
+|--------|------|----------|
+| fingers | chainreactors 原生指纹库 | 内置 |
+| wappalyzer | Web 技术栈检测 | 内置 |
+| fingerprinthub | 指纹中心 | 内置 |
+| ehole | 棱洞指纹库 | 内置 |
+| goby | Goby 指纹库 | 内置 |
+| ARL | 灯塔 ARL 指纹库 | 9264 条 |
 
 ## 输出格式
 
@@ -162,6 +193,7 @@ JSON 数组格式：
 
 - [chainreactors/fingers](https://github.com/chainreactors/fingers) - 多指纹库聚合识别引擎
 - [EdgeSecurityTeam/EHole](https://github.com/EdgeSecurityTeam/EHole) - 红队重点攻击系统指纹探测工具
+- [TophantTechnology/ARL](https://github.com/TophantTechnology/ARL) - 灯塔资产灯塔系统
 
 ## License
 

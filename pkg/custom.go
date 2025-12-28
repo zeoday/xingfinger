@@ -21,11 +21,13 @@ type CustomFingerConfig struct {
 	Wappalyzer  string // Wappalyzer 格式指纹文件路径
 	Fingers     string // Fingers 原生格式指纹文件路径
 	FingerPrint string // FingerPrintHub 格式指纹文件路径
+	ARL         string // ARL YAML 格式指纹文件路径
+	NoDefault   bool   // 禁用默认指纹
 }
 
 // LoadCustomFingerprints 加载自定义指纹文件
-// 根据配置加载用户指定的指纹文件，替换内置指纹数据
-// 当加载自定义指纹时，会清空对应的内置指纹数据
+// 根据配置加载用户指定的指纹文件
+// 自定义指纹默认与内置指纹叠加使用，除非指定 NoDefault
 //
 // 参数：
 //   - config: 自定义指纹配置
@@ -34,17 +36,16 @@ type CustomFingerConfig struct {
 // 返回：
 //   - error: 加载错误
 func LoadCustomFingerprints(config *CustomFingerConfig, silent bool) error {
-	// 检查是否有任何自定义指纹被指定
-	hasCustom := config.EHole != "" || config.Goby != "" || config.Wappalyzer != "" ||
-		config.Fingers != "" || config.FingerPrint != ""
-
-	// 如果有自定义指纹，先清空所有内置指纹
-	if hasCustom {
+	// 如果指定了 NoDefault，清空所有内置指纹
+	if config.NoDefault {
 		resources.EholeData = []byte{}
 		resources.GobyData = []byte{}
 		resources.WappalyzerData = []byte{}
 		resources.FingersHTTPData = []byte{}
 		resources.FingerprinthubWebData = []byte{}
+		if !silent {
+			fmt.Println("[*] 已禁用默认指纹")
+		}
 	}
 
 	if config.EHole != "" {
@@ -101,6 +102,8 @@ func LoadCustomFingerprints(config *CustomFingerConfig, silent bool) error {
 			fmt.Printf("[*] 已加载自定义 FingerPrintHub 指纹: %s\n", config.FingerPrint)
 		}
 	}
+
+	// ARL 使用独立引擎，在 scanner.go 中初始化
 
 	return nil
 }

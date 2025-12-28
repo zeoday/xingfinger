@@ -5,14 +5,18 @@ package pkg
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spaolacci/murmur3"
 )
 
 // Timeout 请求超时时间（秒）
@@ -25,7 +29,8 @@ type Response struct {
 	URL        string              // 请求的目标 URL
 	RawContent []byte              // 原始 HTTP 响应内容（包含 header 和 body），供 fingers 引擎使用
 	Body       string              // 响应体内容（已解码为 UTF-8）
-	Header     map[string][]string // 响应头
+	Header     string              // 响应头字符串（供 ARL 匹配使用）
+	HeaderMap  map[string][]string // 响应头 map
 	Server     string              // 服务器信息（从 Server 或 X-Powered-By 头获取）
 	StatusCode int                 // HTTP 状态码
 	Length     int                 // 响应体长度
@@ -178,11 +183,23 @@ func fetch(task []string, proxy string) (*Response, error) {
 		jsURLs = parseJSRedirect(body, task[0])
 	}
 
+	// 构建 header 字符串供 ARL 匹配使用
+	var headerStr strings.Builder
+	for k, v := range resp.Header {
+		for _, val := range v {
+			headerStr.WriteString(k)
+			headerStr.WriteString(": ")
+			headerStr.WriteString(val)
+			headerStr.WriteString("\n")
+		}
+	}
+
 	return &Response{
 		URL:        task[0],
 		RawContent: rawContent,
 		Body:       body,
-		Header:     resp.Header,
+		Header:     headerStr.String(),
+		HeaderMap:  resp.Header,
 		Server:     server,
 		StatusCode: resp.StatusCode,
 		Length:     len(body),
@@ -288,4 +305,24 @@ func fetchFavicon(faviconURL, proxy string) ([]byte, error) {
 
 	// 读取响应体
 	return io.ReadAll(resp.Body)
+}
+
+// calcFaviconHash 计算 favicon 的 MMH3 hash
+// 使用与 Shodan 相同的算法：base64 编码后计算 murmur3 hash
+func calcFaviconHash(data []byte) string {
+	// Base64 编码
+	b64 := base64.StdEncoding.EncodeToString(data)
+	// 按 76 字符换行（标准 base64 格式）
+	var buf bytes.Buffer
+	for i := 0; i < len(b64); i += 76 {
+		end := i + 76
+		if end > len(b64) {
+			end = len(b64)
+		}
+		buf.WriteString(b64[i:end])
+		buf.WriteString("\n")
+	}
+	// 计算 murmur3 hash
+	hash := murmur3.Sum32(buf.Bytes())
+	return strconv.FormatInt(int64(int32(hash)), 10)
 }

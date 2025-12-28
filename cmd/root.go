@@ -21,6 +21,7 @@ var (
 	proxy      string // 代理地址
 	silent     bool   // 静默模式
 	jsonOutput bool   // JSON 格式输出到终端
+	noDefault  bool   // 禁用默认指纹
 
 	// 自定义指纹文件
 	eholeFile       string // EHole 指纹文件
@@ -28,6 +29,7 @@ var (
 	wappalyzerFile  string // Wappalyzer 指纹文件
 	fingersFile     string // Fingers 指纹文件
 	fingerprintFile string // FingerPrintHub 指纹文件
+	arlFile         string // ARL YAML 指纹文件
 )
 
 // rootCmd 根命令
@@ -64,6 +66,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&proxy, "proxy", "p", "", "代理地址")
 	rootCmd.Flags().BoolVarP(&silent, "silent", "s", false, "静默模式，只输出命中结果")
 	rootCmd.Flags().BoolVarP(&jsonOutput, "json", "j", false, "终端输出 JSON 格式")
+	rootCmd.Flags().BoolVar(&noDefault, "no-default", false, "禁用默认指纹，仅使用自定义指纹")
 
 	// 自定义指纹文件
 	rootCmd.Flags().StringVar(&eholeFile, "ehole", "", "自定义 EHole 指纹文件")
@@ -71,6 +74,7 @@ func init() {
 	rootCmd.Flags().StringVar(&wappalyzerFile, "wappalyzer", "", "自定义 Wappalyzer 指纹文件")
 	rootCmd.Flags().StringVar(&fingersFile, "fingers", "", "自定义 Fingers 指纹文件")
 	rootCmd.Flags().StringVar(&fingerprintFile, "fingerprint", "", "自定义 FingerPrintHub 指纹文件")
+	rootCmd.Flags().StringVar(&arlFile, "arl", "", "自定义 ARL YAML 指纹文件")
 }
 
 // runScan 执行扫描
@@ -100,13 +104,15 @@ func runScan(cmd *cobra.Command, args []string) {
 
 	// 构建自定义指纹配置
 	var customConfig *pkg.CustomFingerConfig
-	if eholeFile != "" || gobyFile != "" || wappalyzerFile != "" || fingersFile != "" || fingerprintFile != "" {
+	if eholeFile != "" || gobyFile != "" || wappalyzerFile != "" || fingersFile != "" || fingerprintFile != "" || arlFile != "" || noDefault {
 		customConfig = &pkg.CustomFingerConfig{
 			EHole:       eholeFile,
 			Goby:        gobyFile,
 			Wappalyzer:  wappalyzerFile,
 			Fingers:     fingersFile,
 			FingerPrint: fingerprintFile,
+			ARL:         arlFile,
+			NoDefault:   noDefault,
 		}
 	}
 
